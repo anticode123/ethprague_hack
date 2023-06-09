@@ -20,6 +20,11 @@ contract Locker {
         bytes32 indexed _to
     );
 
+    modifier OnlyOperator{
+        require(msg.sender == BRIDGE_OPERATOR);
+        _;
+    }
+
     function depositERC20( // need to make sure mapping evmtoken - svmtoken is unique, same applies on the other side, minting gets handled on other chain side
         address _evmtoken,
         uint256 _amount,
@@ -32,5 +37,10 @@ contract Locker {
         IERC20(_evmtoken).safeTransferFrom(_from, address(this), _amount);
 
         emit ERC20DepositInitiated(_evmtoken, _amount, msg.sender, _to);
+    }
+
+    function releaseERC20(address _evmtoken, uint256 _amount, address _to) public OnlyOperator {
+        // approve the operator? - maybe approving operator to withdraw the token when depositing better?
+        IERC20(_evmtoken).safeTransferFrom(address(this), _to, _amount);
     }
 }
