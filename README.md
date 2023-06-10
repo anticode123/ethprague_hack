@@ -25,6 +25,23 @@ user on svm bridging back:
 
 
 ### locker on SVM
+deposit:
+- listens to deposit events on evm bridge part (minter is one eoa acc - BRIDGE_MINT_PROGRAM)
+
+- if(new_deposit):
+    check deployed_tokens.evm_address
+    if(!exists): // new token
+        deploy_token(name, ticker, supply=0)
+        token.mint(amount, _to address)
+        deployed_tokens.append(evm_address) //append a mapping of deployed tokens
+
+    else:
+        token.mint(amount, _to address)
+
+withdraw:
+- call burn function of a token to burn the token
+    - burns the token
+    - creates a withdraw_initiated event that the evm part picks up
 
 
 ### locker on the L2
@@ -33,8 +50,25 @@ user on svm bridging back:
 - first create proof of concept in solidity
 
 - takes: solana block, parses transactions and pushes them into a mapping.
+- add helper contract Solady/LibSort.sol to show useful things about the array
 
-1. monitor.py continously pulling all txs from solana blocks and storing them into "some data structure"
+1. monitor.py continously pulling all txs from solana blocks and storing them into "some data structure" -> upload every block? or every 10 blocks? and then purge from memory?
+
+monitor.py should be async: 
+- continuously writing blocks into memory, once every say 100 blocks, take this and asynchronously push this into block onto L2
+
+    keep appending data structure in memory with cached values
+
+    push routine(blob):
+        - blob = blob
+        - try: send_tx(blob)
+        - except: ("tx failed, store this into local memory as blob (duplicate if already exist, no overwrite))
+
+data structure something like:
+- transactions[block_1, block_2 ... block_n], where block_n is:
+    - block_n[tx1, tx2...tx_n]
+        - tx_n[from, to, gas, arguments...]
+
 
 2. batchsend.py - once in a while (how often?), this gets pushed into a smart contract onto an L2 with cheap calldata - mantle
 
